@@ -2,10 +2,10 @@
 """
 Script that validates Git commit authors against Gitlab group members.
 
-Copy it to custom_hooks/pre-receive and make executable in a GitLab
-server-side Git repository.
+Copy it to hooks/pre-receive and make executable in a Git server-side
+repository.
 
-When using with SubGit, do the following:
+When using with GitLab and SubGit, do the following:
 
 1. Copy the script to custom_hooks/validate-authors.py
 2. chmod 755 custom_hooks/validate-authors.py
@@ -13,10 +13,18 @@ When using with SubGit, do the following:
 4. Enable it in existing pre-receive hook, which already contains SubGit
 script, by adding the following lines to top (before SubGit code):
 
+    # -- START changes for SubGit --
+    
+    # moved this line from below
+    HOOK_INPUT=$(cat)
+    
     set -e
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    $SCRIPT_DIR/validate-authors.py
+    echo "$HOOK_INPUT" | $SCRIPT_DIR/validate-authors.py
     set +e
+    
+    # -- END changes for SubGit --
+
 """
 
 from __future__ import print_function
