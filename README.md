@@ -16,7 +16,15 @@ When using with SubGit, do the following:
 4. Enable it in existing `pre-receive` hook (which already contains SubGit code)
    by adding the following lines to the top before SubGit code:
 
-        set -e
-        SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        $SCRIPT_DIR/validate-authors.py
-        set +e
+    # -- START changes for SubGit --
+    
+    # !!! move this line from below !!!
+    HOOK_INPUT=$(cat)
+    
+    set -e
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    echo "$HOOK_INPUT" | $SCRIPT_DIR/validate-authors.py
+    set +e
+    
+    # -- END changes for SubGit --
+
