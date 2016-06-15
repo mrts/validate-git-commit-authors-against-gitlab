@@ -40,7 +40,8 @@ SKIP_CERT_VALIDATION = True
 
 def main():
     commits = get_commits_from_push()
-    authors = get_gitlab_group_members()
+    authors = get_gitlab_project_members()
+    authors.update(get_gitlab_group_members())
     for commit, author, email in commits:
         if author not in authors:
             die('Unknown author', author, commit, authors)
@@ -63,14 +64,28 @@ def get_commits_from_push():
             islice(commits, 1, None, 3),
             islice(commits, 2, None, 3))
 
-def get_gitlab_group_members():
+def get_gitlab_project_members():
     url = '{0}/api/v3/projects/{1}/members'.format(GITLAB_SERVER, GITLAB_PROJECT)
+    members = request_api(url)
+    return dict((member['name'], '{}@{}'.format(member['username'], EMAIL_DOMAIN))
+        for member in members)
+
+def get_gitlab_group_members():
+    # first fetch the group id of the project
+    url_project = '{0}/api/v3/projects/{1}'.format(GITLAB_SERVER, GITLAB_PROJECT)
+    group_id = request_api(url_project)['namespace']['id']
+    # use that to get the members
+    url_group = '{0}/api/v3/groups/{1}/members'.format(GITLAB_SERVER, group_id)
+    members = request_api(url_group)
+    return dict((member['name'], '{}@{}'.format(member['username'], EMAIL_DOMAIN))
+        for member in members)
+
+def request_api(url):
     headers = {'PRIVATE-TOKEN': GITLAB_TOKEN}
     request = urllib2.Request(url, None, headers)
     with contextlib.closing(urllib2.urlopen(request)) as response:
-        members = json.load(response)
-    return dict((member['name'], '{}@{}'.format(member['username'], EMAIL_DOMAIN))
-        for member in members)
+        result = json.load(response)
+    return result
 
 def die(reason, invalid_value, commit, authors):
     message = []
